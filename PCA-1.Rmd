@@ -1,0 +1,75 @@
+
+
+# Load our packages and our data
+
+```{r}
+
+library(tidyverse)
+library(factoextra)
+
+cereal <- read_csv("cereal-1.csv")
+pokemon <- read_csv("pokemon-3-1.csv")
+
+```
+
+# Prep
+
+```{r}
+
+cereal %>%
+  select(4:16)
+
+numeric_cereal <- cereal %>%
+  select(-name, -mfr, -type, -calories)
+
+numeric_cereal_scaled <- as.data.frame(scale(numeric_cereal, center = TRUE, scale = TRUE))
+
+
+numeric_cereal %>%
+  ggplot(aes(x = protein, y = fat)) +
+  geom_point()
+
+numeric_cereal_scaled %>%
+  ggplot(aes(x = protein, y = fat)) +
+  geom_point()
+
+
+```
+
+# Let's do PCA
+
+```{r}
+
+pca_cereal <- prcomp(numeric_cereal_scaled)
+
+View(as.data.frame(pca_cereal$x))
+
+fviz_eig(pca_cereal, addlabels = TRUE)
+?fviz_eig #This is how you see the documentation
+
+
+ 
+
+```
+
+
+# Let's combine PCA with regression
+
+```{r}
+
+new_data_frame_for_regression <- cereal %>%
+  mutate(pc1 = pca_cereal$x[,1]) %>%
+  mutate(pc2 = pca_cereal$x[,2]) %>%
+  mutate(pc3 = pca_cereal$x[,3]) %>%
+  mutate(pc4 = pca_cereal$x[,4]) %>%
+  select(calories, pc1, pc2, pc3, pc4) %>%
+  mutate(calories = scale(calories, center = TRUE, scale = TRUE))
+
+my_model <- lm(calories ~ pc1 + pc2 + pc3 + pc4, data = new_data_frame_for_regression)
+
+summary(my_model)
+
+
+
+```
+
